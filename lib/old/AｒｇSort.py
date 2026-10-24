@@ -8,16 +8,19 @@ class Point():
         self.x = x
         self.y = y
 
+    def cross(self, other):
+        return self.x * other.y - self.y * other.x
+
     # 偏角の大小を比較する関数
+    # 順番は第一象限→第二象限→第三象限→第四象限の順で、同じ象限内では外積の符号で比較する
     def cmp(self, other):
         # 第一象限・第二象限か第三象限・第四象限かで場合分け
         ph1 = self.y < 0 or (self.y == 0 and self.x < 0)
         ph2 = other.y < 0 or (other.y == 0 and other.x < 0)
         if ph1 != ph2:
-            return ph1
+            return not ph1
         # 外積で偏角の大小を判定
-        cross = self.x * other.y - self.y * other.x
-        return cross > 0
+        return self.cross(other) > 0
     
     def __lt__(self, other):
         return self.cmp(other)

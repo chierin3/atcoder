@@ -70,7 +70,7 @@ class Vector():
         ph1 = self.y < 0 or (self.y == 0 and self.x < 0)
         ph2 = other.y < 0 or (other.y == 0 and other.x < 0)
         if ph1 != ph2:
-            return ph1
+            return not ph1
         # 外積で偏角の大小を判定
         cross = self.cross(other)
         return cross > 0
