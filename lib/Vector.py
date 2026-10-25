@@ -65,6 +65,7 @@ class Vector():
         return Vector(self.y, -self.x)
     
     # 偏角の大小を比較する関数
+    # 順番は第一象限→第二象限→第三象限→第四象限の順で、同じ象限内では外積の符号で比較する
     def cmp(self, other):
         # 第一象限・第二象限か第三象限・第四象限かで場合分け
         ph1 = self.y < 0 or (self.y == 0 and self.x < 0)
