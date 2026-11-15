@@ -1,3 +1,4 @@
+#https://github.com/chierin3/atcoder
 class BIT:
     # 長さN+1の配列を初期化
     def __init__(self, N):
@@ -21,17 +22,24 @@ class BIT:
     # [l, r)の範囲の和を求める
     # l, rは0-indexed
     def query(self, l, r):
-        return self.sum(r + 1) - self.sum(l)
-
-N=10 # int(input())
-B=[2,6,3,16,7,10,6,3,9,11] # list(map(int, input().split()))
-Q=1000 # int(input())
-
-bit=BIT(N)
-for i, b in enumerate(B):
-    bit.add(i+1,b)
-
-for _ in range(Q):
-    L, R=map(int, input().split())
-    ans=bit.sum(R)-bit.sum(L-1)
-    print(ans)
+        return self.sum(r) - self.sum(l)
+    
+N, L, R = map(int,input().split())
+A = list(map(int,input().split()))
+B = [0] * (N + 1)
+for i in range(N):
+    B[i + 1] = B[i] + A[i]
+Z = set(B)
+for i in range(N + 1):
+    Z.add(B[i] - L)
+    Z.add(B[i] - R - 1)
+Z = sorted(list(Z))
+Z = {Z[i] : i + 1 for i in range(len(Z))}
+bit = BIT(len(Z))
+ans = 0
+for i in range(N + 1):
+    left = bit.sum(Z[B[i] - R - 1])
+    right = bit.sum(Z[B[i] - L])
+    ans += right - left
+    bit.add(Z[B[i]], 1)
+print(ans)
