@@ -1,132 +1,104 @@
-from typing import Callable
-# 0-indexed
-# [l,r)の区間に対してfuncを作用させる
-class segmentTree():
-    def __init__(self,N:int,INF:int,func:Callable) -> None:
-        size = 1
-        while size < N : size *= 2
-        self.N = N
-        self.size = size
-        self.INF = INF
-        self.func = func
-        self.data = [self.INF] * (size*2)
+class LCA:
+    def __init__(self, n):
+        self.n = n
+        self.root = 1
+        self.G = [[] for _ in range(n+1)]
+        self.depth = [0] * (n + 1)
+        v = 0
+        while (1 << v) < n:
+            v += 1
+        self.v = v
+        self.parent = [[-1] * (n + 1) for _ in range(v + 1)]
 
-    def get(self,pos:int)->int:
-        return self.data[pos + self.size]
+    def add_edge(self, a, b):
+        self.G[a].append(b)
+        self.G[b].append(a)
+
+    def init(self):
+        Q = [(self.root, 0)]
+        visited = [False] * (self.n + 1)
+        while Q:
+            v, d = Q.pop()
+            if not visited[v]:
+                visited[v] = True
+                self.depth[v] = d
+                for u in self.G[v]:
+                    if not visited[u]:
+                        self.parent[0][u] = v
+                        Q.append((u, d + 1))
+        for i in range(1, self.v + 1):
+            for j in range(1, self.n + 1):
+                if self.parent[i-1][j] != -1:
+                    self.parent[i][j] = self.parent[i-1][self.parent[i-1][j]]
+
+    def find_lca(self, u, v):
+        if self.depth[u] > self.depth[v]:
+            u, v = v, u
+        for i in range(self.v, -1, -1):
+            if ((self.depth[v] - self.depth[u]) >> i) & 1:
+                v = self.parent[i][v]
+        if u == v:
+            return u
+        for i in range(self.v, -1, -1):
+            if self.parent[i][u] != -1 and self.parent[i][u] != self.parent[i][v]:
+                u = self.parent[i][u]
+                v = self.parent[i][v]
+        return self.parent[0][u]
     
-    def update(self,pos:int,x:int):
-        pos = pos + self.size
-        self.data[pos] = x
-        while pos >= 2:
-            pos >>= 1
-            self.data[pos] = self.func(self.data[pos*2],self.data[pos*2+1])
-
-    # pos番目にxを足す
-    def add(self,pos:int,x:int):
-        z = self.get(pos)
-        self.update(pos, z + x)
-
-    # pos番目にfuncを作用させる
-    def add_f(self,pos:int,x:int):
-        z = self.get(pos)
-        self.update(pos, self.func(z, x))
-    
-    def query(self,l:int,r:int)->int:
-        l += self.size
-        r += self.size
-        value_L = self.INF
-        value_R = self.INF
-        while l < r:
-            if l & 1:
-                value_L = self.func(value_L, self.data[l])
-                l += 1
-            if r & 1:
-                r -= 1
-                value_R = self.func(self.data[r], value_R)
-            l >>= 1
-            r >>= 1
-        return self.func(value_L, value_R)
+    def distance(self, u, v):
+        lca = self.find_lca(u, v)
+        return self.depth[u] + self.depth[v] - 2 * self.depth[lca]
 
 N = int(input())
-A = list(map(int,input().split()))
-B = list(map(int,input().split()))
+A = [0] + list(map(int,input().split()))
+B = [0] + list(map(int,input().split()))
 Z = {z:i for i,z in enumerate(sorted(set(B)))}
-for i in range(N):
+for i in range(N + 1):
     B[i] = Z[B[i]]
-del Z
-G = [[] for _ in range(N)]
+lca = LCA(N)
 for i in range(N - 1):
     a, b = map(int,input().split())
-    a -= 1
-    b -= 1
-    G[a].append(b)
-    G[b].append(a)
-IN = [-1] * N
-OUT = [-1] * N
-TOUR = []
-DEPTH = []
-stack = [(0, 0)]
-visited = [False] * N
-while stack:
-    v, d = stack.pop()
-    if visited[v]:
-        OUT[v] = len(TOUR)
-        TOUR.append(v)
-        DEPTH.append(d)
-    else:
-        visited[v] = True
-        IN[v] = len(TOUR)
-        TOUR.append(v)
-        DEPTH.append(d)
-        for w in G[v]:
-            if not visited[w]:
-                stack.append((v, d))
-                stack.append((w, d + 1))
-SEG = segmentTree(len(TOUR), (1000000,-1), lambda x, y: x if x[0] < y[0] else y)
-for i in range(len(TOUR)):
-    SEG.update(i, (DEPTH[i], TOUR[i]))
+    lca.add_edge(a, b)
+lca.init()
 
-IN2 = [-1] * N
-OUT2 = [-1] * N
-TOUR2 = []
-stack = [0]
-visited = [False] * N
+IN = [-1] * (N + 1)
+OUT = [-1] * (N + 1)
+TOUR = []
+stack = [1]
+visited = [False] * (N + 1)
 while stack:
     v = stack.pop()
     if visited[v]:
-        OUT2[v] = len(TOUR2)
-        TOUR2.append(v)
+        OUT[v] = len(TOUR)
+        TOUR.append(v)
     else:
         visited[v] = True
         stack.append(v)
-        IN2[v] = len(TOUR2)
-        TOUR2.append(v)
-        for w in G[v]:
+        IN[v] = len(TOUR)
+        TOUR.append(v)
+        for w in lca.G[v]:
             if not visited[w]:
                 stack.append(w)
 
 Q = int(input())
-W = len(TOUR2)
+W = len(TOUR)
 width = max(1, int(W / (Q ** 0.5)))
 qs = [[] for _ in range(W // width + 1)]
-K = []
 for i in range(Q):
     u, v = map(int,input().split())
-    u -= 1
-    v -= 1
     if IN[u] > IN[v]:
         u, v = v, u
-    lca = SEG.query(IN[u], IN[v] + 1)[1]
-    is_lca = lca == u or lca == v
-    if lca == u:
-        l = IN2[u]
-        r = IN2[v]
+    p = lca.find_lca(u, v)
+    is_lca = p == u
+    if p == u:
+        l = IN[u]
+        r = IN[v]
     else:
-        l = OUT2[u]
-        r = IN2[v]
-    qs[l // width].append((r, l, i, lca, is_lca))
+        l = OUT[u]
+        r = IN[v]
+    qs[l // width].append((r, l, i, p, is_lca))
 ans = [0] * Q
-visited = [False] * N
+visited = [False] * (N + 1)
 count = 0
 total = [[0] * len(Z) for _ in range(2)]
 
@@ -157,15 +129,15 @@ for i, qb in enumerate(qs):
     for r, l, j, p, b in qb:
         while x > l:
             x -= 1
-            add(TOUR2[x])
+            add(TOUR[x])
         while y < r:
             y += 1
-            add(TOUR2[y])
+            add(TOUR[y])
         while x < l:
-            remove(TOUR2[x])
+            remove(TOUR[x])
             x += 1
         while y > r:
-            remove(TOUR2[y])
+            remove(TOUR[y])
             y -= 1
         if not b:
             ans[j] = count + total[(A[p] + 1) % 2][B[p]]
