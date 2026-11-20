@@ -1,7 +1,8 @@
+import sys
 class LCA:
     def __init__(self, n):
         self.n = n
-        self.root = 1
+        self.root = 0
         self.G = [[] for _ in range(n+1)]
         self.depth = [0] * (n + 1)
         v = 0
@@ -49,23 +50,22 @@ class LCA:
         lca = self.find_lca(u, v)
         return self.depth[u] + self.depth[v] - 2 * self.depth[lca]
 
-N = int(input())
-A = [0] + list(map(int,input().split()))
-B = [0] + list(map(int,input().split()))
-Z = {z:i for i,z in enumerate(sorted(set(B)))}
-for i in range(N + 1):
-    B[i] = Z[B[i]]
+input = sys.stdin.buffer.readline
+N, Q = map(int,input().split())
+X = list(map(int,input().split()))
 lca = LCA(N)
 for i in range(N - 1):
     a, b = map(int,input().split())
+    a -= 1
+    b -= 1
     lca.add_edge(a, b)
 lca.init()
 
-IN = [-1] * (N + 1)
-OUT = [-1] * (N + 1)
+IN = [-1] * N
+OUT = [-1] * N
 TOUR = []
-stack = [1]
-visited = [False] * (N + 1)
+stack = [0]
+visited = [False] * N
 while stack:
     v = stack.pop()
     if visited[v]:
@@ -80,53 +80,56 @@ while stack:
             if not visited[w]:
                 stack.append(w)
 
-Q = int(input())
 W = len(TOUR)
 width = max(1, int(W / (Q ** 0.5)))
 qs = [[] for _ in range(W // width + 1)]
+A = [0] * Q
+B = [0] * Q
+P = [0] * Q
 for i in range(Q):
-    u, v = map(int,input().split())
+    u, v, a, b = map(int,input().split())
+    u -= 1
+    v -= 1
+    A[i] = a
+    B[i] = b
     if IN[u] > IN[v]:
         u, v = v, u
     p = lca.find_lca(u, v)
-    is_lca = p == u
+    P[i] = p
     if p == u:
-        l = IN[u]
-        r = IN[v]
+        l = IN[u] + 1
     else:
         l = OUT[u]
-        r = IN[v]
-    qs[l // width].append((r, l, i, p, is_lca))
+    r = IN[v]
+    qs[l // width].append((r, l, i))
 ans = [0] * Q
-visited = [False] * (N + 1)
-count = 0
-total = [[0] * len(Z) for _ in range(2)]
+visited = [False] * N
+count = [0] * (N + 9)
+total = [0] * (N + 9)
 
 def add(x):
-    global count
     if visited[x]:
-        total[A[x]][B[x]] -= 1
-        count -= total[(A[x] + 1) % 2][B[x]]
+        total[count[X[x]]] -= 1
+        count[X[x]] -= 1
     else:
-        total[A[x]][B[x]] += 1
-        count += total[(A[x] + 1) % 2][B[x]]
+        count[X[x]] += 1
+        total[count[X[x]]] += 1
     visited[x] = not visited[x]
 
 def remove(x):
-    global count
     if visited[x]:
-        total[A[x]][B[x]] -= 1
-        count -= total[(A[x] + 1) % 2][B[x]]
+        total[count[X[x]]] -= 1
+        count[X[x]] -= 1
     else:
-        total[A[x]][B[x]] += 1
-        count += total[(A[x] + 1) % 2][B[x]]
+        count[X[x]] += 1
+        total[count[X[x]]] += 1
     visited[x] = not visited[x]
 
 x = 0
 y = -1
 for i, qb in enumerate(qs):
-    qb.sort(key=lambda x : x[0], reverse=bool(i & 1))
-    for r, l, j, p, b in qb:
+    qb.sort(key = lambda x : x[0], reverse=bool(i & 1))
+    for r, l, j in qb:
         while x > l:
             x -= 1
             add(TOUR[x])
@@ -139,9 +142,8 @@ for i, qb in enumerate(qs):
         while y > r:
             remove(TOUR[y])
             y -= 1
-        if not b:
-            ans[j] = count + total[(A[p] + 1) % 2][B[p]]
-        else:
-            ans[j] = count
-for a in ans:
-    print(a)
+        add(P[j])
+        ans[j] = total[A[j]] - total[B[j] + 1]
+        remove(P[j])
+        
+sys.stdout.write("\n".join(map(str,ans)))
