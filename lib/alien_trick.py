@@ -1,16 +1,16 @@
 def alien_trick(X, l1, l2, solve):
-    res1 = solve(l1)
-    res2 = solve(l2)
+    h1, k1 = solve(l1)
+    h2, k2 = solve(l2)
     while l1 + 1 < l2:
         l = (l1 + l2) // 2
-        res = solve(l)
-        if res[1] > X:
+        h, k = solve(l)
+        if k > X:
             l1 = l
-            res1 = res
+            h1, k1 = h, k
         else:
             l2 = l
-            res2 = res
-    return max(res1[0] - l1 * X, res2[0] - l2 * X)
+            h2, k2 = h, k
+    return max(h1 - l1 * X, h2 - l2 * X)
 
 N, R = map(int,input().split())
 A = list(map(int,input().split()))
